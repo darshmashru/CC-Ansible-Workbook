@@ -1,0 +1,48 @@
+---
+- name: Install Podman and deploy Nginx container
+  hosts: all
+  become: true  # Run the tasks with elevated privileges
+  collections:
+    - containers.podman
+  tasks:
+    - name: Update the apt package manager cache
+      apt:
+        update_cache: yes
+      become: true
+
+    - name: Install necessary packages
+      apt:
+        name:
+          - podman
+          - software-properties-common
+        state: present
+      become: true
+
+    - name: Ensure Podman is installed
+      command: podman --version
+      register: podman_version
+      changed_when: false
+
+    - name: Display Podman version
+      debug:
+        msg: "Podman version installed: {{ podman_version.stdout }}"
+
+    - name: Pull the Nginx container image from Docker Hub
+      podman_image:
+        name: docker.io/library/nginx
+        state: present
+
+    - name: Ensure Nginx container is running on port 81
+      podman_container:
+        name: nginx_container
+        image: docker.io/library/nginx
+        state: started
+        restart_policy: always
+        ports:
+          - "81:80"
+      register: nginx_container_status
+
+    - name: Confirm Nginx container creation
+      debug:
+        msg: "Nginx container is up and running on port 81."
+      when: nginx_container_status.changed
