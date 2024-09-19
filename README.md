@@ -123,14 +123,65 @@ An Ansible inventory file defines which machine(s) the playbook will target.
 
     ```ini
     [nginx_vm]
-    <your-remote-vm-ip> ansible_user=<your-username> ansible_ssh_private_key_file=<path-to-your-private-key>
+    your-domain-name.com ansible_user=<your-username> ansible_ssh_pass=<your-password>
     ```
 
-This specifies that the remote machine should be accessed over SSH using a private key.
+### Store Your SSH Password in a `.env` File
 
----
+Create a `.env` file in your project directory:
 
-## 4. Running the Playbook
+```bash
+nano .env
+```
+
+Add the following content, replacing all the fields with your actual SSH details:
+
+```bash
+ANSIBLE_SSH_HOST=your-domain-name.com
+ANSIBLE_SSH_USER=your-username
+ANSIBLE_SSH_PASS=your-password
+```
+
+Save and close the file.
+
+## 3. Update Your Ansible Inventory
+
+Create or update your `inventory.ini` file to use the environment variable for the SSH password:
+
+```ini
+[nginx_vm]
+{{ lookup('env', 'ANSIBLE_SSH_HOST') }} ansible_user={{ lookup('env', 'ANSIBLE_SSH_USER') }} ansible_ssh_pass={{ lookup('env', 'ANSIBLE_SSH_PASS') }}
+```
+
+This specifies that the remote machine should be accessed over SSH using a password.
+
+## 4. Create a Script to Load Environment Variables and Run the Playbook
+
+Create a script named `run_playbook.sh` to load environment variables and execute the playbook:
+
+```bash
+nano run_playbook.sh
+```
+
+Add the following content:
+
+```bash
+#!/bin/bash
+
+# Load environment variables from .env file
+source .env
+
+# Run Ansible playbook
+ansible-playbook -i inventory.ini install_nginx_podman.yml
+```
+
+Make the script executable:
+
+```bash
+chmod +x run_playbook.sh
+```
+
+## 5. Running the Playbook
 
 Once you have your playbook and inventory file, you can execute the playbook with the following command:
 
